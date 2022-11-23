@@ -1,10 +1,10 @@
 #!/bin/sh
 
-REGION="hkg"
+# REGION="hkg"
 
 if ! command -v flyctl >/dev/null 2>&1; then
     printf '\e[33mCould not resolve command - flyctl. So, install flyctl first.\n\e[0m'
-    curl -L https://fly.io/install.sh | FLYCTL_INSTALL=/usr/local sh
+    curl -L https://fly.io/install.sh | sh
 fi
 
 if [ -z "${APP_NAME}" ]; then
@@ -25,7 +25,41 @@ if [ "$(cat /tmp/${APP_NAME} | grep -o "Could not resolve")" = "Could not resolv
 else
     printf '\e[33mThe app has been created.\n\e[0m'
 fi
-
+printf '\e[33mNext, create app config file - fly.toml.\n\e[0m'
+cat <<EOF >./fly.toml
+app = "$APP_NAME"
+kill_signal = "SIGINT"
+kill_timeout = 5
+processes = []
+[env]
+  PORT = "8080"
+[experimental]
+  allowed_public_ports = []
+  auto_rollback = true
+[[services]]
+  http_checks = []
+  internal_port = 8080
+  processes = ["app"]
+  protocol = "tcp"
+  script_checks = []
+  [services.concurrency]
+    hard_limit = 50
+    soft_limit = 45
+    type = "connections"
+  [[services.ports]]
+    force_https = true
+    handlers = ["http"]
+    port = 80
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
+  [[services.tcp_checks]]
+    grace_period = "60s"
+    interval = "15s"
+    restart_limit = 0
+    timeout = "2s"
+EOF
+printf '\e[32mCreate app config file success.\n\e[0m'
 printf '\e[33mNext, set app secrets and regions.\n\e[0m'
 
 flyctl regions set ${REGION}
