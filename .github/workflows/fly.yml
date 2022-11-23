@@ -1,9 +1,12 @@
 name: Fly Deploy
+
 on: 
-  push:
+  workflow_dispatch:
+
 env:
   FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
   APP_NAME: ${{ secrets.APP_NAME }}
+  
 jobs:
   deploy:
     name: Deploy app
